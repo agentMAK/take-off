@@ -1,4 +1,4 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Link, Text } from "@chakra-ui/react";
 
 export const Header = () => {
   return (
@@ -11,7 +11,11 @@ export const Header = () => {
       paddingX={"10px"}
     >
       <Text>Take Off</Text>
-      <Text>10 Votes</Text>
+      <Link href={"/claim-votes"}>
+        <Button colorScheme="teal" variant="outline">
+          <Text>0 Votes</Text>
+        </Button>
+      </Link>
     </Flex>
   );
 };
