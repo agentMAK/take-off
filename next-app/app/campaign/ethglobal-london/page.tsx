@@ -5,7 +5,6 @@ import { Box, Text, Flex, Button, Avatar, useToast } from "@chakra-ui/react";
 import campaignData from "../../context/campaign.json";
 import { useCallback, useEffect, useState } from "react";
 import { useWeb3 } from "@/app/context/useWeb3";
-import PrimaryButton from "../../components/Button";
 
 export default function Home() {
   const ethLondonCampaign = campaignData.campaigns.find(
@@ -127,19 +126,8 @@ export default function Home() {
             <Text>Prize Pool</Text>
           </Flex>
         </Flex>
-        <PrimaryButton
-          loading={cUSDLoading}
-          onClick={signMessage}
-          title="Sign a Message"
-          widthFull
-        />
       </Box>
-      <Flex
-        width={"100%"}
-        paddingY={"20px"}
-        gap={"20px"}
-        flexDirection={"column"}
-      >
+      <Flex width={"100%"} paddingY={"20px"} gap={"20px"} flexDirection={'column'}>
         {ethLondonCampaign &&
           ethLondonCampaign.applicants.map((applicant, index) => (
             <Flex

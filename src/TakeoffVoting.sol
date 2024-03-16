@@ -1,26 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VotingContract   {
+// Interface for DeployedContract
+interface IStakingContract {
+    function checkVotingPower(address user) external view returns (uint256);
+}
 
-	Struct Interval {
-		uint256 startTime;
-		uint256 endTime;
-		uint totalProposals;
-	}
+contract VotingContract is Ownable {
 
-	Struct Proposal {
-		address proposer;
-		int256 result;
-		mapping(address => uint256) totalVotes;
-	}
-
-	Proposal[] public proposals;
-
-	//@notice Total proposals of a user
-	mapping(address => uint256[]) userProposals;
+	/// @notice Address of the staking contract
+	IStakingContract public stakingTakeoff; 
 
     /// @notice Flag indicating whether the votes are open or not
     bool public votesOpen;
@@ -30,34 +21,34 @@ contract VotingContract   {
 
 ///EVENTS///
 
-    event ProposalCreated(uint256 proposalId, address indexed proposer);
-    event Voted(address indexed voter, uint256 indexed proposalId, bool option);
+    event Voted(address voter);
+    event Open(uint blockTimestamp, uint closingTime);
 
-	constructor() {}
+	constructor(address initialOwner, address _stakingContract) Ownable(initialOwner) {
+		stakingTakeoff = IStakingContract(_stakingContract);
+
+	}
 
 ///EXTERNAL FUNCTIONS///
 
 	   /// @notice Opens the lottery for receiving bets
-    function openVotes(uint256 closingTime) external onlyOwner whenBetsClosed {
+    function openVotes(uint256 _closingTime) public onlyOwner whenVotesClosed {
         require(
-            closingTime > block.timestamp,
+            _closingTime > block.timestamp,
             "Closing time must be in the future"
         );
-        votesClosingTime = closingTime;
+        votesClosingTime = _closingTime;
         votesOpen = true;
+        emit Open(block.timestamp, _closingTime);
     }
 
-	//@notice Function to vote on a proposal of a user (only when voting period starts)
-	function vote(bool option, uint256 proposalId) external whenBetsOpen {
-		require(proposalId < userProposals.length, "Proposal does not exist");
-		require(StakingContract.votingPower(msg.sender > 0));
+	//@notice Function to vote on a campaign (only when voting period starts)
+	function vote() public whenVotesOpen {
+		require(stakingTakeoff.checkVotingPower(msg.sender) > 0);
 
-		uint256 votingPower = StakingContract.votingPower(msg.sender);
-		Proposal memory proposal = proposals[proposalId];
-		proposal.result += votingPower * (option ? 1 : -1); 
+    	emit Voted(msg.sender);
 
 	} 
-
 
 ///MODIFIERS///
 
@@ -68,9 +59,9 @@ contract VotingContract   {
     }
 
     /// @notice Passes when the lottery is at open state and the current block timestamp is lower than the lottery closing date
-    modifier whenBetsOpen() {
+    modifier whenVotesOpen() {
         require(
-            votesOpen && block.timestamp < betsClosingTime,
+            votesOpen && block.timestamp < votesClosingTime,
             "Lottery is closed"
         );
         _;
