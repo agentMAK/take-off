@@ -1,6 +1,13 @@
+declare global {
+    interface Window {
+        ethereum: any;
+    }
+}
+
+
 import { useState } from "react";
 import StableTokenABI from "./cusd-abi.json";
-import MinipayNFTABI from "./minipay-nft.json";
+
 import {
     createPublicClient,
     createWalletClient,
@@ -60,60 +67,6 @@ export const useWeb3 = () => {
         return receipt;
     };
 
-    const mintMinipayNFT = async () => {
-        let walletClient = createWalletClient({
-            transport: custom(window.ethereum),
-            chain: celoAlfajores,
-        });
-
-        let [address] = await walletClient.getAddresses();
-
-        const tx = await walletClient.writeContract({
-            address: MINIPAY_NFT_CONTRACT,
-            abi: MinipayNFTABI.abi,
-            functionName: "safeMint",
-            account: address,
-            args: [
-                address,
-                "https://cdn-production-opera-website.operacdn.com/staticfiles/assets/images/sections/2023/hero-top/products/minipay/minipay__desktop@2x.a17626ddb042.webp",
-            ],
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-            hash: tx,
-        });
-
-        return receipt;
-    };
-
-    const getNFTs = async () => {
-        let walletClient = createWalletClient({
-            transport: custom(window.ethereum),
-            chain: celoAlfajores,
-        });
-
-        const minipayNFTContract = getContract({
-            abi: MinipayNFTABI.abi,
-            address: MINIPAY_NFT_CONTRACT,
-            client: publicClient,
-        });
-
-        const [address] = await walletClient.getAddresses();
-        const nfts: any = await minipayNFTContract.read.getNFTsByAddress([
-            address,
-        ]);
-
-        let tokenURIs: string[] = [];
-
-        for (let i = 0; i < nfts.length; i++) {
-            const tokenURI: string = (await minipayNFTContract.read.tokenURI([
-                nfts[i],
-            ])) as string;
-            tokenURIs.push(tokenURI);
-        }
-        return tokenURIs;
-    };
-
     const signTransaction = async () => {
         let walletClient = createWalletClient({
             transport: custom(window.ethereum),
@@ -134,8 +87,6 @@ export const useWeb3 = () => {
         address,
         getUserAddress,
         sendCUSD,
-        mintMinipayNFT,
-        getNFTs,
         signTransaction,
     };
 };
