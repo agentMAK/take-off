@@ -1,0 +1,21 @@
+{
+  "campaigns": [
+    {
+      "name": "ETHLondon",
+      "applicants": [
+        {
+          "name": "Alex Smith",
+          "address": "0x3Ff4D1A2fA15945bB9B6F0B1D342C54B9CfD2A21"
+        },
+        {
+          "name": "Maria Garcia",
+          "address": "0x4Ee5D2A8bB5B6fA8D25C545BFB6C7fF2D6A8F4E2"
+        },
+        {
+          "name": "John Doe",
+          "address": "0x5Ff6E3D7CcD5E2F8D4C6BbAeF7C8D9EaB1B2C3D4"
+        }
+      ]
+    }
+  ]
+}
