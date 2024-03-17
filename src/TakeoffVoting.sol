@@ -2,12 +2,27 @@
 pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+// import "./TakeoffStaking.sol";
 
-// Interface for DeployedContract
+/// Interface for DeployedContract
 interface IStakingContract {
     function checkVotingPower(address user) external view returns (uint256);
+    function reduceVotingPower(address _user, uint256 _amount) external;
 }
 
+/**
+ * @title Takeoff Voting Contract
+ * @author  Filipe Rey
+ * @dev This contract stores users everything related to voting campaigns.
+ * 
+ * 
+ * Still things to refactor, like keeping track of the first five users with more votes in each campaign.
+ * When a campaign period has ended, total grants will be distributed. 
+ * Calculations to do off-chain.
+ * 
+ * For now it's one contract for campaign but idealy we refactor to deal with different campaigns at the time
+ * and have two permanent contracts and one interface for every campaign.
+ */
 contract VotingContract is Ownable {
 
 	/// @notice Address of the staking contract
@@ -15,23 +30,29 @@ contract VotingContract is Ownable {
 
     /// @notice Flag indicating whether the votes are open or not
     bool public votesOpen;
-
+    
     /// @notice Timestamp of the votes next closing date and time
     uint256 public votesClosingTime;
 
+    ///@notice Mapping to store applicant total votes
+    mapping(address => uint256) public votesGotten;
+
 ///EVENTS///
 
-    event Voted(address voter);
+    event Voted(address indexed voter);
     event Open(uint blockTimestamp, uint closingTime);
+    event PrizeDistributed(address indexed user, uint256 amount);
 
+    ///@notice Sets the TakeoffStaking contract
 	constructor(address initialOwner, address _stakingContract) Ownable(initialOwner) {
 		stakingTakeoff = IStakingContract(_stakingContract);
 
 	}
 
-///EXTERNAL FUNCTIONS///
+///FUNCTIONS///
 
-	   /// @notice Opens the lottery for receiving bets
+	   ///@notice Opens the lottery for receiving bets
+	   ///@param _closingTime The campaign closing period set by the owner
     function openVotes(uint256 _closingTime) public onlyOwner whenVotesClosed {
         require(
             _closingTime > block.timestamp,
@@ -39,22 +60,31 @@ contract VotingContract is Ownable {
         );
         votesClosingTime = _closingTime;
         votesOpen = true;
+
         emit Open(block.timestamp, _closingTime);
     }
 
 	//@notice Function to vote on a campaign (only when voting period starts)
-	function vote() public whenVotesOpen {
-		require(stakingTakeoff.checkVotingPower(msg.sender) > 0);
+	//@param _for which address to vote on
+	//@param _amount Amount of votes
+	function vote(address _for, uint256 _amount) public whenVotesOpen {
+		require(stakingTakeoff.checkVotingPower(msg.sender) <= _amount);
+		votesGotten[_for] += _amount; // update the top 5 users based on the vote
+		stakingTakeoff.reduceVotingPower(msg.sender, _amount); // update the voting power of the msg.sender in the staking contract
 
+		// update the top5 candidates
     	emit Voted(msg.sender);
 
-	} 
+	}
 
 ///MODIFIERS///
 
     /// @notice When votes are at closed state
     modifier whenVotesClosed() {
-        require(!votesOpen, "Lottery is open");
+        require(
+        	!votesOpen,
+        	"Lottery is open"
+        );
         _;
     }
 
