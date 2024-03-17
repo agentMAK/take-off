@@ -14,6 +14,8 @@ import campaignData from "../../context/campaign.json";
 import { useCallback, useEffect, useState } from "react";
 import { useWeb3 } from "@/app/context/useWeb3";
 import { supabase } from "@/app/utils/supabase/client";
+import { ISuccessResult } from "@worldcoin/idkit";
+import { VerifyReply } from "@/pages/api/verify";
 
 export default function Home() {
   const ethLondonCampaign = campaignData.campaigns.find(

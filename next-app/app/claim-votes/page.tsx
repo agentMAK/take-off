@@ -1,10 +1,20 @@
 "use client";
 
-import { Box, Text, Flex, Button, useToast, Link, Image } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Flex,
+  Button,
+  useToast,
+  Link,
+  Image,
+} from "@chakra-ui/react";
 import { createClient } from "@supabase/supabase-js";
 import { useWeb3 } from "@/app/context/useWeb3";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../utils/supabase/client";
+import { IDKitWidget, ISuccessResult, VerificationLevel } from "@worldcoin/idkit";
+import { VerifyReply } from "@/pages/api/verify";
 
 export default function Home() {
   // const {
@@ -53,6 +63,44 @@ export default function Home() {
     await getVotes(address);
   };
 
+  const handleProof = async (result: ISuccessResult) => {
+    console.log("Proof received from IDKit:\n", JSON.stringify(result)); // Log the proof from IDKit to the console for visibility
+    const reqBody = {
+      merkle_root: result.merkle_root,
+      nullifier_hash: result.nullifier_hash,
+      proof: result.proof,
+      verification_level: result.verification_level,
+      action: process.env.NEXT_PUBLIC_WLD_ACTION,
+      signal: "",
+    };
+    console.log(
+      "Sending proof to backend for verification:\n",
+      JSON.stringify(reqBody)
+    ); // Log the proof being sent to our backend for visibility
+    const res: Response = await fetch("/api/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reqBody),
+    });
+    const data: VerifyReply = await res.json();
+    console.log("verify");
+    if (res.status == 200) {
+      console.log("Successful response from backend:\n", data); // Log the response from our backend for visibility
+    } else {
+      throw new Error(
+        `Error code ${res.status} (${data.code}): ${data.detail}` ??
+          "Unknown error."
+      ); // Throw an error if verification fails
+    }
+  };
+
+  const onSuccess = () => {
+    console.log("Success");
+    giveVotes(address)
+  };
+
   return (
     <>
       <Flex
@@ -83,7 +131,7 @@ export default function Home() {
           mt={"100px"}
           gap={"100px"}
         >
-          <Flex gap={"50px"}>
+          <Flex gap={"50px"} flexDirection={"column"}>
             <Flex
               flexDirection={"column"}
               maxWidth={"300px"}
@@ -107,9 +155,19 @@ export default function Home() {
             >
               <Text>Claim 10 Votes</Text>
 
-              <Button onClick={() => address && giveVotes(address)} isDisabled>
-                Connect Worldcoin
-              </Button>
+              <IDKitWidget
+                app_id="app_staging_001c10e1b5a0b9d5088279095f2722be"
+                action="award-vote"
+                verification_level={VerificationLevel.Device}
+                handleVerify={handleProof}
+                onSuccess={onSuccess}
+              >
+                {({ open }) => (
+                  <Button onClick={open}>
+                    Verify with World ID
+                  </Button>
+                )}
+              </IDKitWidget>
             </Flex>
           </Flex>
           <Flex gap={"50px"}>
